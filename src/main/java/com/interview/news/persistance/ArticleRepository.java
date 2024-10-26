@@ -13,4 +13,6 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     @Query(value = "SELECT * FROM article ORDER BY published_at DESC LIMIT :limit OFFSET :offset", nativeQuery = true)
     List<Article> findArticlesWithLimitAndOffset(@Param("limit") int limit, @Param("offset") int offset);
 
+    boolean existsByUrl(String url);
+
 }

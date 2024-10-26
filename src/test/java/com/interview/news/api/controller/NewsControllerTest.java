@@ -111,23 +111,6 @@ class NewsControllerTest extends BaseDatabaseTest {
                 .andExpect(jsonPath("$[4].title").value("Article Title 2"));
     }
 
-    private void prepareDatabaseWithMultipleArticles(final int count) {
-        List<Article> articles = new ArrayList<>();
-        for (int i = 1; i <= count; i++) {
-            Article article = new Article();
-            article.setSourceName("Source " + i);
-            article.setAuthor("Author " + i);
-            article.setTitle("Article Title " + i);
-            article.setDescription("Description for article " + i);
-            article.setUrl("http://example.com/article" + i);
-            article.setUrlToImage("http://example.com/image" + i + ".jpg");
-            article.setPublishedAt(Instant.parse("2024-10-24T10:00:00Z").plusSeconds(i * 60));
-            article.setContent("Content for article " + i);
-            articles.add(article);
-        }
-        articleRepository.saveAll(articles);
-    }
-
     @Test
     void shouldFetchAndSaveArticlesWhenOnlyCountryIsUsed() throws Exception {
         prepareMockedResponse();
@@ -216,6 +199,23 @@ class NewsControllerTest extends BaseDatabaseTest {
         );
 
         Mockito.when(newsExternalServiceIntegration.fetchTopHeadlines(any(ArticleParamsDTO.class))).thenReturn(articles);
+    }
+
+    private void prepareDatabaseWithMultipleArticles(final int count) {
+        List<Article> articles = new ArrayList<>();
+        for (int i = 1; i <= count; i++) {
+            Article article = new Article();
+            article.setSourceName("Source " + i);
+            article.setAuthor("Author " + i);
+            article.setTitle("Article Title " + i);
+            article.setDescription("Description for article " + i);
+            article.setUrl("http://example.com/article" + i);
+            article.setUrlToImage("http://example.com/image" + i + ".jpg");
+            article.setPublishedAt(Instant.parse("2024-10-24T10:00:00Z").plusSeconds(i * 60));
+            article.setContent("Content for article " + i);
+            articles.add(article);
+        }
+        articleRepository.saveAll(articles);
     }
 
 }

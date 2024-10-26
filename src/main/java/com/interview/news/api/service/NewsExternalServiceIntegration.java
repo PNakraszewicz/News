@@ -9,9 +9,11 @@ import com.interview.news.api.exception.ExternalRateLimitExceededException;
 import com.interview.news.api.exception.ExternalServerErrorException;
 import com.interview.news.api.exception.ExternalUnauthorizedException;
 import com.interview.news.api.model.NewsApiResponseError;
+import com.interview.news.api.model.SourcesResponse;
 import com.interview.news.api.model.TopHeadlinesResponse;
 import com.interview.news.domain.model.dto.ArticleDTO;
 import com.interview.news.domain.model.dto.ArticleParamsDTO;
+import com.interview.news.domain.model.dto.SourceDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class NewsExternalServiceIntegration {
 
     private static final String API_KEY = "b143d95790ab4f80aed6f66ea3b653b8";
     private static final String NEWS_API_URL = "https://newsapi.org/v2/top-headlines";
+    private static final String SOURCES_API_URL = "https://newsapi.org/v2/sources";
     private static final Logger LOGGER = Logger.getLogger(NewsExternalServiceIntegration.class.getName());
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -50,6 +53,26 @@ public class NewsExternalServiceIntegration {
         try {
             TopHeadlinesResponse response = restTemplate.getForObject(url, TopHeadlinesResponse.class);
             return getArticlesFromResponse(response);
+        } catch (HttpClientErrorException e) {
+            handleClientError(e);
+        } catch (HttpServerErrorException e) {
+            handleServerError(e);
+        } catch (RestClientException e) {
+            LOGGER.severe("Connection error while calling News API: " + e.getMessage());
+            throw new ExternalClientUnknownException("Error while calling News API", e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    public List<SourceDTO> fetchSources() {
+        String url = UriComponentsBuilder.fromHttpUrl(SOURCES_API_URL)
+                .queryParam("apiKey", API_KEY)
+                .toUriString();
+
+        try {
+            SourcesResponse response = restTemplate.getForObject(url, SourcesResponse.class);
+            return response != null ? response.sources() : Collections.emptyList();
         } catch (HttpClientErrorException e) {
             handleClientError(e);
         } catch (HttpServerErrorException e) {
