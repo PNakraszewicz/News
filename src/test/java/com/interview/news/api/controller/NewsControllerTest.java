@@ -4,6 +4,7 @@ import com.interview.news.BaseDatabaseTest;
 import com.interview.news.api.exception.ExternalUnauthorizedException;
 import com.interview.news.api.service.NewsExternalServiceIntegration;
 import com.interview.news.domain.model.dto.ArticleDTO;
+import com.interview.news.domain.model.dto.ArticleParamsDTO;
 import com.interview.news.domain.model.dto.SourceDTO;
 import com.interview.news.domain.model.entity.Article;
 import com.interview.news.persistance.ArticleRepository;
@@ -25,10 +26,10 @@ import java.util.List;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +51,7 @@ class NewsControllerTest extends BaseDatabaseTest {
     void cleanDatabase() {
         articleRepository.deleteAll();
     }
+
     @Test
     void shouldFetchAndSaveArticlesToDatabase() throws Exception {
         prepareMockedResponse();
@@ -78,7 +80,7 @@ class NewsControllerTest extends BaseDatabaseTest {
 
     @Test
     void shouldReturnUnauthorizedForInvalidApiKey() throws Exception {
-        Mockito.when(newsExternalServiceIntegration.fetchTopHeadlines(anyString(), isNull(), isNull()))
+        Mockito.when(newsExternalServiceIntegration.fetchTopHeadlines(any(ArticleParamsDTO.class)))
                 .thenThrow(new ExternalUnauthorizedException("Invalid API Key"));
 
         mockMvc.perform(post("/api/news/fetch")
@@ -126,6 +128,66 @@ class NewsControllerTest extends BaseDatabaseTest {
         articleRepository.saveAll(articles);
     }
 
+    @Test
+    void shouldFetchAndSaveArticlesWhenOnlyCountryIsUsed() throws Exception {
+        prepareMockedResponse();
+
+        mockMvc.perform(post("/api/news/fetch")
+                        .param("country", "us")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].title").value("Penguins Found on Madagascar"))
+                .andExpect(jsonPath("$[0].source.name").value("ZOO TV"))
+                .andExpect(jsonPath("$[1].title").value("Penguins Invade Middle-Earth"))
+                .andExpect(jsonPath("$[1].source.name").value("Middle-Earth Chronicle"));
+    }
+
+    @Test
+    void shouldFetchAndSaveArticlesWhenOnlyCategoryIsUsed() throws Exception {
+        prepareMockedResponse();
+
+        mockMvc.perform(post("/api/news/fetch")
+                        .param("category", "technology")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].title").value("Penguins Found on Madagascar"))
+                .andExpect(jsonPath("$[0].source.name").value("ZOO TV"))
+                .andExpect(jsonPath("$[1].title").value("Penguins Invade Middle-Earth"))
+                .andExpect(jsonPath("$[1].source.name").value("Middle-Earth Chronicle"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenCountryAndCategoryAreUsedTogether() throws Exception {
+        mockMvc.perform(post("/api/news/fetch")
+                        .param("country", "us")
+                        .param("category", "technology")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Source param cannot be mixed with other params"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenCountryAndSourcesAreUsedTogether() throws Exception {
+        mockMvc.perform(post("/api/news/fetch")
+                        .param("country", "us")
+                        .param("sources", "bbc-news")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Source param cannot be mixed with other params"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenCategoryAndSourcesAreUsedTogether() throws Exception {
+        mockMvc.perform(post("/api/news/fetch")
+                        .param("category", "technology")
+                        .param("sources", "bbc-news")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Source param cannot be mixed with other params"));
+    }
+
     private void prepareMockedResponse() {
         SourceDTO source1 = new SourceDTO("zoo-tv", "ZOO TV");
         SourceDTO source2 = new SourceDTO("middle-earth-chronicle", "Middle-Earth Chronicle");
@@ -153,6 +215,7 @@ class NewsControllerTest extends BaseDatabaseTest {
                 )
         );
 
-        Mockito.when(newsExternalServiceIntegration.fetchTopHeadlines(anyString(), isNull(), isNull())).thenReturn(articles);
+        Mockito.when(newsExternalServiceIntegration.fetchTopHeadlines(any(ArticleParamsDTO.class))).thenReturn(articles);
     }
+
 }

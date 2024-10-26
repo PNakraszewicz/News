@@ -1,6 +1,7 @@
 package com.interview.news.api.service;
 
 import com.interview.news.domain.model.dto.ArticleDTO;
+import com.interview.news.domain.model.dto.ArticleParamsDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +19,7 @@ class NewsExternalServiceTriggerTest {
 
     @Test
     void testFetchTopHeadlines() {
-        List<ArticleDTO> articles = newsExternalServiceIntegration.fetchTopHeadlines("us", null, null);
+        List<ArticleDTO> articles = newsExternalServiceIntegration.fetchTopHeadlines(new ArticleParamsDTO("us", null, null));
 
         assertFalse(articles.isEmpty(), "The list of articles should not be empty after fetching data from News API");
 

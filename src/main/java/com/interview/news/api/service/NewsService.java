@@ -1,6 +1,7 @@
 package com.interview.news.api.service;
 
 import com.interview.news.domain.model.dto.ArticleDTO;
+import com.interview.news.domain.model.dto.ArticleParamsDTO;
 import com.interview.news.domain.model.dto.SourceDTO;
 import com.interview.news.domain.model.entity.Article;
 import com.interview.news.persistance.ArticleRepository;
@@ -24,9 +25,9 @@ public class NewsService {
     }
 
     @Transactional
-    @Cacheable(value = "topHeadlinesCache", key = "#country + '-' + #category + '-' + #sources")
-    public List<ArticleDTO> fetchAndSaveTopHeadlines(String country, String category, String sources) {
-        List<ArticleDTO> articleDTOs = newsExternalServiceIntegration.fetchTopHeadlines(country, category, sources);
+    @Cacheable(value = "topHeadlinesCache", key = "#params")
+    public List<ArticleDTO> fetchAndSaveTopHeadlines(ArticleParamsDTO params) {
+        List<ArticleDTO> articleDTOs = newsExternalServiceIntegration.fetchTopHeadlines(params);
 
         List<Article> articles = articleDTOs.stream()
                 .map(this::mapToEntity)

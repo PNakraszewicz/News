@@ -7,6 +7,7 @@ import com.interview.news.api.exception.ExternalServerErrorException;
 import com.interview.news.api.exception.ExternalUnauthorizedException;
 import com.interview.news.api.model.TopHeadlinesResponse;
 import com.interview.news.domain.model.dto.ArticleDTO;
+import com.interview.news.domain.model.dto.ArticleParamsDTO;
 import com.interview.news.domain.model.dto.SourceDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,10 +15,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,7 +34,7 @@ class NewsExternalServiceIntegrationTest {
     private RestTemplate restTemplate;
 
     /*
-        As an improvement would consider introducing wiremock as a library more feasible for mocking API interaction
+        As an improvement would consider introducing WireMock as a library more feasible for mocking API interaction
     */
     @InjectMocks
     private NewsExternalServiceIntegration newsExternalService;
@@ -77,7 +78,7 @@ class NewsExternalServiceIntegrationTest {
         when(restTemplate.getForObject(anyString(), Mockito.eq(TopHeadlinesResponse.class)))
                 .thenReturn(response);
 
-        List<ArticleDTO> result = newsExternalService.fetchTopHeadlines("us", null, null);
+        List<ArticleDTO> result = newsExternalService.fetchTopHeadlines(new ArticleParamsDTO("us", null, null));
 
         assertEquals(2, result.size());
         assertEquals("Penguins Found on Madagascar", result.get(0).title());
@@ -125,7 +126,7 @@ class NewsExternalServiceIntegrationTest {
                 .thenThrow(exception);
 
         ExternalServerErrorException thrown = assertThrows(ExternalServerErrorException.class, () -> {
-            newsExternalService.fetchTopHeadlines("us", null, null);
+            newsExternalService.fetchTopHeadlines(new ArticleParamsDTO("us", null, null));
         });
 
         assertEquals("Service Unavailable: NewsAPI is down.", thrown.getMessage());
@@ -146,7 +147,7 @@ class NewsExternalServiceIntegrationTest {
         when(restTemplate.getForObject(anyString(), Mockito.eq(TopHeadlinesResponse.class)))
                 .thenThrow(exception);
 
-        RuntimeException thrown = assertThrows(expectedException, () -> newsExternalService.fetchTopHeadlines("us", null, null));
+        RuntimeException thrown = assertThrows(expectedException, () -> newsExternalService.fetchTopHeadlines(new ArticleParamsDTO("us", null, null)));
         assertEquals(message, thrown.getMessage());
     }
 }

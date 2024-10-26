@@ -2,6 +2,7 @@ package com.interview.news.api.controller;
 
 import com.interview.news.api.service.NewsService;
 import com.interview.news.domain.model.dto.ArticleDTO;
+import com.interview.news.domain.model.dto.ArticleParamsDTO;
 import com.interview.news.domain.model.entity.Article;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,17 +30,17 @@ public class NewsController {
      * The transaction ensures that if fetching or saving fails, no incomplete data is saved.
      */
     @PostMapping("/fetch")
-    public ResponseEntity<List<ArticleDTO>> fetchAndSaveTopHeadlines(
+    public ResponseEntity<?> fetchAndSaveTopHeadlines(
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String sources) {
 
         if ((country != null && (category != null || sources != null)) ||
                 (category != null && sources != null)) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body("Source param cannot be mixed with other params");
         }
 
-        List<ArticleDTO> savedArticles = newsService.fetchAndSaveTopHeadlines(country, category, sources);
+        List<ArticleDTO> savedArticles = newsService.fetchAndSaveTopHeadlines(new ArticleParamsDTO(country, category, sources));
         return ResponseEntity.ok(savedArticles);
     }
 

@@ -11,6 +11,7 @@ import com.interview.news.api.exception.ExternalUnauthorizedException;
 import com.interview.news.api.model.NewsApiResponseError;
 import com.interview.news.api.model.TopHeadlinesResponse;
 import com.interview.news.domain.model.dto.ArticleDTO;
+import com.interview.news.domain.model.dto.ArticleParamsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -43,8 +44,8 @@ public class NewsExternalServiceIntegration {
         this.objectMapper = objectMapper;
     }
 
-    public List<ArticleDTO> fetchTopHeadlines(String country, String category, String sources) {
-        String url = buildUrlForHeadlines(country, category, sources);
+    public List<ArticleDTO> fetchTopHeadlines(final ArticleParamsDTO articleParams) {
+        String url = buildUrlForHeadlines(articleParams);
 
         try {
             TopHeadlinesResponse response = restTemplate.getForObject(url, TopHeadlinesResponse.class);
@@ -61,18 +62,18 @@ public class NewsExternalServiceIntegration {
         return Collections.emptyList();
     }
 
-    private String buildUrlForHeadlines(String country, String category, String sources) {
+    private String buildUrlForHeadlines(final ArticleParamsDTO articleParams) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(NEWS_API_URL)
                 .queryParam("apiKey", API_KEY);
 
-        if (country != null) {
-            builder.queryParam("country", country);
+        if (articleParams.country() != null) {
+            builder.queryParam("country", articleParams.country());
         }
-        if (category != null) {
-            builder.queryParam("category", category);
+        if (articleParams.category() != null) {
+            builder.queryParam("category", articleParams.category());
         }
-        if (sources != null) {
-            builder.queryParam("sources", sources);
+        if (articleParams.sources() != null) {
+            builder.queryParam("sources", articleParams.sources());
         }
         return builder.toUriString();
     }
@@ -107,14 +108,10 @@ public class NewsExternalServiceIntegration {
                     new ExternalUnauthorizedException(errorMessage);
             case "parameterInvalid", "parametersMissing", "sourcesTooMany" ->
                     new ExternalBadRequestException(errorMessage);
-            case "rateLimited" ->
-                    new ExternalRateLimitExceededException(errorMessage);
-            case "sourceDoesNotExist" ->
-                    new ExternalNotFoundException(errorMessage);
-            case "unexpectedError" ->
-                    new ExternalServerErrorException(errorMessage);
-            default ->
-                    new ExternalBadRequestException("Unexpected Error: " + errorMessage);
+            case "rateLimited" -> new ExternalRateLimitExceededException(errorMessage);
+            case "sourceDoesNotExist" -> new ExternalNotFoundException(errorMessage);
+            case "unexpectedError" -> new ExternalServerErrorException(errorMessage);
+            default -> new ExternalBadRequestException("Unexpected Error: " + errorMessage);
         };
     }
 
