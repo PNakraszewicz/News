@@ -48,6 +48,6 @@ public class NewsScheduler {
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void fetchSourcesPeriodically() {
-        newsService.getSources();
+        newsService.fetchAndSaveSources();
     }
 }
