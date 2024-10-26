@@ -7,6 +7,9 @@ import org.testcontainers.junit.jupiter.Container;
 
 public class BaseDatabaseTest {
 
+    /*
+    As an improvement would consider more advanced configuration to run database container only once, instead of per test class
+     */
     @Container
     public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("testdb")

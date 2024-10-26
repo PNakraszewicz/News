@@ -43,8 +43,8 @@ public class NewsExternalServiceIntegration {
         this.objectMapper = objectMapper;
     }
 
-    public List<ArticleDTO> fetchTopHeadlines(String country) {
-        String url = buildUrlForHeadlines(country);
+    public List<ArticleDTO> fetchTopHeadlines(String country, String category, String sources) {
+        String url = buildUrlForHeadlines(country, category, sources);
 
         try {
             TopHeadlinesResponse response = restTemplate.getForObject(url, TopHeadlinesResponse.class);
@@ -61,11 +61,20 @@ public class NewsExternalServiceIntegration {
         return Collections.emptyList();
     }
 
-    private String buildUrlForHeadlines(String country) {
-        return UriComponentsBuilder.fromHttpUrl(NEWS_API_URL)
-                .queryParam("country", country)
-                .queryParam("apiKey", API_KEY)
-                .toUriString();
+    private String buildUrlForHeadlines(String country, String category, String sources) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(NEWS_API_URL)
+                .queryParam("apiKey", API_KEY);
+
+        if (country != null) {
+            builder.queryParam("country", country);
+        }
+        if (category != null) {
+            builder.queryParam("category", category);
+        }
+        if (sources != null) {
+            builder.queryParam("sources", sources);
+        }
+        return builder.toUriString();
     }
 
     private List<ArticleDTO> getArticlesFromResponse(TopHeadlinesResponse response) {

@@ -18,7 +18,7 @@ class NewsExternalServiceTriggerTest {
 
     @Test
     void testFetchTopHeadlines() {
-        List<ArticleDTO> articles = newsExternalServiceIntegration.fetchTopHeadlines("us");
+        List<ArticleDTO> articles = newsExternalServiceIntegration.fetchTopHeadlines("us", null, null);
 
         assertFalse(articles.isEmpty(), "The list of articles should not be empty after fetching data from News API");
 

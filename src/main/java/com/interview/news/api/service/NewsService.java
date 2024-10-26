@@ -1,10 +1,13 @@
 package com.interview.news.api.service;
 
 import com.interview.news.domain.model.dto.ArticleDTO;
+import com.interview.news.domain.model.dto.SourceDTO;
 import com.interview.news.domain.model.entity.Article;
 import com.interview.news.persistance.ArticleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -20,14 +23,24 @@ public class NewsService {
         this.articleRepository = articleRepository;
     }
 
-    public void fetchAndSaveTopHeadlines(String country) {
-        List<ArticleDTO> articleDTOs = newsExternalServiceIntegration.fetchTopHeadlines(country);
+    @Transactional
+    @Cacheable(value = "topHeadlinesCache", key = "#country + '-' + #category + '-' + #sources")
+    public List<ArticleDTO> fetchAndSaveTopHeadlines(String country, String category, String sources) {
+        List<ArticleDTO> articleDTOs = newsExternalServiceIntegration.fetchTopHeadlines(country, category, sources);
 
         List<Article> articles = articleDTOs.stream()
                 .map(this::mapToEntity)
                 .toList();
 
         articleRepository.saveAll(articles);
+
+        return articles.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    public List<Article> getNews(int limit, int offset) {
+        return articleRepository.findArticlesWithLimitAndOffset(limit, offset);
     }
 
     private Article mapToEntity(ArticleDTO articleDTO) {
@@ -41,5 +54,18 @@ public class NewsService {
         articleEntity.setPublishedAt(articleDTO.publishedAt());
         articleEntity.setContent(articleDTO.content());
         return articleEntity;
+    }
+
+    private ArticleDTO mapToDTO(Article article) {
+        return new ArticleDTO(
+                new SourceDTO(null, article.getSourceName()),
+                article.getAuthor(),
+                article.getTitle(),
+                article.getDescription(),
+                article.getUrl(),
+                article.getUrlToImage(),
+                article.getPublishedAt(),
+                article.getContent()
+        );
     }
 }

@@ -32,6 +32,9 @@ class NewsExternalServiceIntegrationTest {
     @Mock
     private RestTemplate restTemplate;
 
+    /*
+        As an improvement would consider introducing wiremock as a library more feasible for mocking API interaction
+    */
     @InjectMocks
     private NewsExternalServiceIntegration newsExternalService;
 
@@ -74,7 +77,7 @@ class NewsExternalServiceIntegrationTest {
         when(restTemplate.getForObject(anyString(), Mockito.eq(TopHeadlinesResponse.class)))
                 .thenReturn(response);
 
-        List<ArticleDTO> result = newsExternalService.fetchTopHeadlines("us");
+        List<ArticleDTO> result = newsExternalService.fetchTopHeadlines("us", null, null);
 
         assertEquals(2, result.size());
         assertEquals("Penguins Found on Madagascar", result.get(0).title());
@@ -122,7 +125,7 @@ class NewsExternalServiceIntegrationTest {
                 .thenThrow(exception);
 
         ExternalServerErrorException thrown = assertThrows(ExternalServerErrorException.class, () -> {
-            newsExternalService.fetchTopHeadlines("us");
+            newsExternalService.fetchTopHeadlines("us", null, null);
         });
 
         assertEquals("Service Unavailable: NewsAPI is down.", thrown.getMessage());
@@ -143,7 +146,7 @@ class NewsExternalServiceIntegrationTest {
         when(restTemplate.getForObject(anyString(), Mockito.eq(TopHeadlinesResponse.class)))
                 .thenThrow(exception);
 
-        RuntimeException thrown = assertThrows(expectedException, () -> newsExternalService.fetchTopHeadlines("us"));
+        RuntimeException thrown = assertThrows(expectedException, () -> newsExternalService.fetchTopHeadlines("us", null, null));
         assertEquals(message, thrown.getMessage());
     }
 }
