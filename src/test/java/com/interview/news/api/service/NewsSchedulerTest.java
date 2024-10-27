@@ -6,10 +6,7 @@ import com.interview.news.domain.model.dto.SourceDTO;
 import com.interview.news.domain.model.entity.Source;
 import com.interview.news.persistance.SourceRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -23,7 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-class NewsSchedulerPerformanceTest {
+class NewsSchedulerTest {
 
     @Mock
     private SourceRepository sourceRepository;

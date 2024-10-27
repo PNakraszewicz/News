@@ -40,7 +40,7 @@ public class NewsScheduler {
 
     /*
         Method left only to show the difference in performance between parallel streaming and sequential forEach approach.
-        To observe the difference - may trigger NewsSchedulerPerformanceTest class.
+        To observe the difference - may trigger NewsSchedulerTest class.
      */
     public void fetchArticlesBySourcesSequential() {
         LOGGER.info("Starting fetchArticlesBySourcesSequential");

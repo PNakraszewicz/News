@@ -5,6 +5,7 @@ import com.interview.news.api.exception.ExternalBadRequestException;
 import com.interview.news.api.exception.ExternalRateLimitExceededException;
 import com.interview.news.api.exception.ExternalServerErrorException;
 import com.interview.news.api.exception.ExternalUnauthorizedException;
+import com.interview.news.api.model.SourcesResponse;
 import com.interview.news.api.model.TopHeadlinesResponse;
 import com.interview.news.domain.model.dto.ArticleDTO;
 import com.interview.news.domain.model.dto.ArticleParamsDTO;
@@ -132,6 +133,53 @@ class NewsExternalServiceIntegrationTest {
         assertEquals("Service Unavailable: NewsAPI is down.", thrown.getMessage());
     }
 
+    @Test
+    void shouldReturnListOfSources() {
+        SourceDTO source1 = new SourceDTO("zoo-tv", "ZOO TV", "TV from the zoo", "https://zoo-tv.com", "nature", "en", "US");
+        SourceDTO source2 = new SourceDTO("frodo-news", "Frodo News", "News from Middle-Earth", "https://frodo-news.com", "fantasy", "en", "ME");
+
+        List<SourceDTO> sources = List.of(source1, source2);
+        SourcesResponse response = new SourcesResponse("ok", sources);
+
+        when(restTemplate.getForObject(anyString(), Mockito.eq(SourcesResponse.class))).thenReturn(response);
+
+        List<SourceDTO> result = newsExternalService.fetchSources();
+
+        assertEquals(2, result.size());
+        assertEquals("ZOO TV", result.get(0).name());
+        assertEquals("Frodo News", result.get(1).name());
+    }
+
+    @Test
+    void shouldThrowUnauthorizedExceptionForInvalidApiKeyOnFetchSources() {
+        mockClientErrorOnFetchSources(
+                "apiKeyInvalid",
+                "Invalid API Key: Your API key is invalid or incorrect.",
+                HttpStatus.UNAUTHORIZED,
+                ExternalUnauthorizedException.class
+        );
+    }
+
+    @Test
+    void shouldThrowBadRequestExceptionForInvalidParameterOnFetchSources() {
+        mockClientErrorOnFetchSources(
+                "parameterInvalid",
+                "Invalid Parameter: The parameter is not supported.",
+                HttpStatus.BAD_REQUEST,
+                ExternalBadRequestException.class
+        );
+    }
+
+    @Test
+    void shouldThrowRateLimitExceededExceptionWhenRateLimitedOnFetchSources() {
+        mockClientErrorOnFetchSources(
+                "rateLimited",
+                "Rate Limited: You have been rate limited. Please try again later.",
+                HttpStatus.TOO_MANY_REQUESTS,
+                ExternalRateLimitExceededException.class
+        );
+    }
+
     private void mockClientError(String code, String message, HttpStatus status, Class<? extends RuntimeException> expectedException) {
         String responseBody = """
                 {
@@ -148,6 +196,24 @@ class NewsExternalServiceIntegrationTest {
                 .thenThrow(exception);
 
         RuntimeException thrown = assertThrows(expectedException, () -> newsExternalService.fetchTopHeadlines(new ArticleParamsDTO("us", null, null)));
+        assertEquals(message, thrown.getMessage());
+    }
+
+    private void mockClientErrorOnFetchSources(String code, String message, HttpStatus status, Class<? extends RuntimeException> expectedException) {
+        String responseBody = """
+                {
+                    "status": "error",
+                    "code": "%s",
+                    "message": "%s"
+                }
+                """.formatted(code, message);
+
+        HttpClientErrorException exception = HttpClientErrorException.create(
+                status, "Client Error", null, responseBody.getBytes(), null);
+
+        when(restTemplate.getForObject(anyString(), Mockito.eq(SourcesResponse.class))).thenThrow(exception);
+
+        RuntimeException thrown = assertThrows(expectedException, () -> newsExternalService.fetchSources());
         assertEquals(message, thrown.getMessage());
     }
 }

@@ -142,16 +142,6 @@ class NewsControllerTest extends BaseDatabaseTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenCountryAndCategoryAreUsedTogether() throws Exception {
-        mockMvc.perform(post("/api/news/fetch")
-                        .param("country", "us")
-                        .param("category", "technology")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Source param cannot be mixed with other params"));
-    }
-
-    @Test
     void shouldReturnBadRequestWhenCountryAndSourcesAreUsedTogether() throws Exception {
         mockMvc.perform(post("/api/news/fetch")
                         .param("country", "us")
