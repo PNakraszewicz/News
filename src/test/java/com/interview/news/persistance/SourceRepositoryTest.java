@@ -8,6 +8,8 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,18 +46,36 @@ class SourceRepositoryTest extends BaseDatabaseTest {
     }
 
     @Test
-    void shouldReturnTrueWhenSourceExistsBySourceId() {
-        final Source source = new Source();
-        source.setSourceId("middle-earth-chronicle");
-        source.setName("Middle-Earth Chronicle");
-        source.setDescription("Middle-Earth Chronicle desc");
-        source.setUrl("https://middle-earth-chronicle.com");
-        source.setCategory("fantasy");
-        source.setLanguage("en");
-        source.setCountry("ME");
+    void shouldReturnAllSourceIds() {
+        // Given
+        Source source1 = new Source();
+        source1.setSourceId("zoo-tv");
+        source1.setName("ZOO TV");
+        source1.setDescription("TV from New York zoo");
+        source1.setUrl("https://zoo-tv.com");
+        source1.setCategory("nature");
+        source1.setLanguage("en");
+        source1.setCountry("US");
 
-        sourceRepository.save(source);
+        Source source2 = new Source();
+        source2.setSourceId("middle-earth-chronicle");
+        source2.setName("Middle-Earth Chronicle");
+        source2.setDescription("News from Middle-Earth");
+        source2.setUrl("https://middle-earth.com");
+        source2.setCategory("fantasy");
+        source2.setLanguage("en");
+        source2.setCountry("ME");
 
-        assertTrue(sourceRepository.existsBySourceId("middle-earth-chronicle"));
+        sourceRepository.save(source1);
+        sourceRepository.save(source2);
+
+        // When
+        List<String> sourceIds = sourceRepository.findAllSourcesId();
+
+        // Then
+        assertNotNull(sourceIds);
+        assertEquals(2, sourceIds.size());
+        assertTrue(sourceIds.contains("zoo-tv"));
+        assertTrue(sourceIds.contains("middle-earth-chronicle"));
     }
 }

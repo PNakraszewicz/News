@@ -12,10 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 @Service
 public class NewsService {
-
+    private static final Logger LOGGER = Logger.getLogger(NewsService.class.getName());
     private final NewsExternalServiceIntegration newsExternalServiceIntegration;
     private final ArticleRepository articleRepository;
     private final SourceRepository sourceRepository;
@@ -33,9 +34,10 @@ public class NewsService {
     public List<ArticleDTO> fetchAndSaveTopHeadlines(ArticleParamsDTO params) {
         List<ArticleDTO> articleDTOs = newsExternalServiceIntegration.fetchTopHeadlines(params);
 
+        List<String> existingUrls = articleRepository.findAllUrls();
         List<Article> articles = articleDTOs.stream()
                 .map(ArticleDTO::toEntity)
-                .filter(article -> !articleRepository.existsByUrl(article.getUrl()))
+                .filter(article -> !existingUrls.contains(article.getUrl()))
                 .toList();
 
         articleRepository.saveAll(articles);
@@ -46,13 +48,19 @@ public class NewsService {
     @Transactional
     public List<SourceDTO> fetchAndSaveSources() {
         List<SourceDTO> sourceDTOs = newsExternalServiceIntegration.fetchSources();
+        List<String> allSourcesId = sourceRepository.findAllSourcesId();
 
         List<Source> sources = sourceDTOs.stream()
                 .map(SourceDTO::toEntity)
-                .filter(source -> !sourceRepository.existsBySourceId(source.getSourceId()))
+                .filter(source -> !allSourcesId.contains(source.getSourceId()))
+                /* Added a limit to avoid exhausting the NewsAPI call during scheduled article fetching,
+                as persisting all sources could otherwise result in excessive API requests.
+                 */
+                .limit(3)
                 .toList();
 
         List<Source> savedSources = sourceRepository.saveAll(sources);
+        LOGGER.info(() -> "Successfully saved" + savedSources.size() + "sources");
         return savedSources.stream().map(SourceDTO::fromEntity).toList();
     }
 

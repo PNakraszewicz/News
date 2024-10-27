@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,13 +45,22 @@ class ArticleRepositoryTest extends BaseDatabaseTest {
     }
 
     @Test
-    void shouldReturnTrueWhenArticleExistsByUrl() {
-        final Article article = createTestData("https://some-s3-url/article");
-        articleRepository.save(article);
+    void shouldReturnAllArticleUrls() {
+        // Given
+        Article article1 = createTestData("https://some-s3-url/article1");
+        Article article2 = createTestData("https://some-s3-url/article2");
 
-        boolean exists = articleRepository.existsByUrl("https://some-s3-url/article");
+        articleRepository.save(article1);
+        articleRepository.save(article2);
 
-        assertTrue(exists, "Article should exist by URL");
+        // When
+        List<String> articleUrls = articleRepository.findAllUrls();
+
+        // Then
+        assertNotNull(articleUrls);
+        assertEquals(2, articleUrls.size());
+        assertTrue(articleUrls.contains("https://some-s3-url/article1"));
+        assertTrue(articleUrls.contains("https://some-s3-url/article2"));
     }
 
     private Article createTestData(final String url) {

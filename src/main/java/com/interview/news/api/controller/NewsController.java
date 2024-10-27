@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/news")
 public class NewsController {
+
+    private static final Logger LOGGER = Logger.getLogger(NewsController.class.getName());
 
     private final NewsService newsService;
 
@@ -35,13 +39,18 @@ public class NewsController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String sources) {
 
-        if ((country != null && (category != null || sources != null)) ||
-                (category != null && sources != null)) {
-            return ResponseEntity.badRequest().body("Source param cannot be mixed with other params");
-        }
+        LOGGER.info(() -> "Starting fetchAndSaveTopHeadlines with parameters: " +
+                "country=" + country + ", category=" + category + ", sources=" + sources);
 
-        List<ArticleDTO> savedArticles = newsService.fetchAndSaveTopHeadlines(new ArticleParamsDTO(country, category, sources));
-        return ResponseEntity.ok(savedArticles);
+        try {
+            ArticleParamsDTO params = new ArticleParamsDTO(country, category, sources);
+            List<ArticleDTO> savedArticles = newsService.fetchAndSaveTopHeadlines(params);
+            LOGGER.info(() -> "Completed fetchAndSaveTopHeadlines with " + savedArticles.size() + " articles saved.");
+            return ResponseEntity.ok(savedArticles);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warning("Invalid parameters: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     /**
@@ -52,7 +61,11 @@ public class NewsController {
     public ResponseEntity<List<Article>> getNews(
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "0") int offset) {
+
+        LOGGER.info(() -> "Starting getNews with limit=" + limit + " and offset=" + offset);
         List<Article> articles = newsService.getNews(limit, offset);
+
+        LOGGER.info(() -> "Completed getNews, retrieved " + articles.size() + " articles.");
         return ResponseEntity.ok(articles);
     }
 }

@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
-
 @Service
 public class NewsExternalServiceIntegration {
 
@@ -49,16 +48,20 @@ public class NewsExternalServiceIntegration {
 
     public List<ArticleDTO> fetchTopHeadlines(final ArticleParamsDTO articleParams) {
         String url = buildUrlForHeadlines(articleParams);
+        LOGGER.info(() -> "Starting fetchTopHeadlines with URL: " + url);
 
         try {
             TopHeadlinesResponse response = restTemplate.getForObject(url, TopHeadlinesResponse.class);
+            LOGGER.info(() -> "Successfully fetched top headlines");
             return getArticlesFromResponse(response);
         } catch (HttpClientErrorException e) {
+            LOGGER.warning(() -> "Client error while fetching top headlines: " + e.getMessage());
             handleClientError(e);
         } catch (HttpServerErrorException e) {
+            LOGGER.warning(() -> "Server error while fetching top headlines: " + e.getMessage());
             handleServerError(e);
         } catch (RestClientException e) {
-            LOGGER.severe("Connection error while calling News API: " + e.getMessage());
+            LOGGER.severe(() -> "Connection error while calling News API: " + e.getMessage());
             throw new ExternalClientUnknownException("Error while calling News API", e);
         }
 
@@ -69,13 +72,17 @@ public class NewsExternalServiceIntegration {
         String url = UriComponentsBuilder.fromHttpUrl(SOURCES_API_URL)
                 .queryParam("apiKey", API_KEY)
                 .toUriString();
+        LOGGER.info(() -> "Starting fetchSources with URL: " + url);
 
         try {
             SourcesResponse response = restTemplate.getForObject(url, SourcesResponse.class);
+            LOGGER.info("Successfully fetched sources");
             return response != null ? response.sources() : Collections.emptyList();
         } catch (HttpClientErrorException e) {
+            LOGGER.warning("Client error while fetching sources: " + e.getMessage());
             handleClientError(e);
         } catch (HttpServerErrorException e) {
+            LOGGER.warning("Server error while fetching sources: " + e.getMessage());
             handleServerError(e);
         } catch (RestClientException e) {
             LOGGER.severe("Connection error while calling News API: " + e.getMessage());
@@ -98,7 +105,10 @@ public class NewsExternalServiceIntegration {
         if (articleParams.sources() != null) {
             builder.queryParam("sources", articleParams.sources());
         }
-        return builder.toUriString();
+
+        String finalUrl = builder.toUriString();
+        LOGGER.info(() -> "Built URL for headlines: " + finalUrl);
+        return finalUrl;
     }
 
     private List<ArticleDTO> getArticlesFromResponse(TopHeadlinesResponse response) {
@@ -106,40 +116,62 @@ public class NewsExternalServiceIntegration {
             LOGGER.warning("Empty response or no articles found");
             return Collections.emptyList();
         }
+        LOGGER.info(() -> "Fetched " + response.articles().size() + " articles");
         return response.articles();
     }
 
     private void handleClientError(HttpClientErrorException e) {
+        LOGGER.warning("Handling client error: " + e.getMessage());
         NewsApiResponseError errorResponse = parseErrorResponse(e);
         String errorCode = errorResponse.code();
         String errorMessage = errorResponse.message();
 
+        LOGGER.warning(() -> "Mapped client error with code: " + errorCode + ", message: " + errorMessage);
         throw mapClientErrorToException(errorCode, errorMessage);
     }
 
     private NewsApiResponseError parseErrorResponse(HttpClientErrorException e) {
         try {
+            LOGGER.fine("Parsing error response: " + e.getResponseBodyAsString());
             return objectMapper.readValue(e.getResponseBodyAsString(), NewsApiResponseError.class);
         } catch (JsonProcessingException ex) {
+            LOGGER.severe("Failed to parse error response: " + ex.getMessage());
             throw new RuntimeException("Error parsing error response: " + ex.getMessage(), ex);
         }
     }
 
     private RuntimeException mapClientErrorToException(String errorCode, String errorMessage) {
         return switch (errorCode) {
-            case "apiKeyDisabled", "apiKeyExhausted", "apiKeyInvalid", "apiKeyMissing" ->
-                    new ExternalUnauthorizedException(errorMessage);
-            case "parameterInvalid", "parametersMissing", "sourcesTooMany" ->
-                    new ExternalBadRequestException(errorMessage);
-            case "rateLimited" -> new ExternalRateLimitExceededException(errorMessage);
-            case "sourceDoesNotExist" -> new ExternalNotFoundException(errorMessage);
-            case "unexpectedError" -> new ExternalServerErrorException(errorMessage);
-            default -> new ExternalBadRequestException("Unexpected Error: " + errorMessage);
+            case "apiKeyDisabled", "apiKeyExhausted", "apiKeyInvalid", "apiKeyMissing" -> {
+                LOGGER.warning(() -> "Unauthorized error with code: " + errorCode);
+                yield new ExternalUnauthorizedException(errorMessage);
+            }
+            case "parameterInvalid", "parametersMissing", "sourcesTooMany" -> {
+                LOGGER.warning(() -> "Bad request error with code: " + errorCode);
+                yield new ExternalBadRequestException(errorMessage);
+            }
+            case "rateLimited" -> {
+                LOGGER.warning(() -> "Rate limit error with code: " + errorCode);
+                yield new ExternalRateLimitExceededException(errorMessage);
+            }
+            case "sourceDoesNotExist" -> {
+                LOGGER.warning(() -> "Not found error with code: " + errorCode);
+                yield new ExternalNotFoundException(errorMessage);
+            }
+            case "unexpectedError" -> {
+                LOGGER.warning(() -> "Server error with code: " + errorCode);
+                yield new ExternalServerErrorException(errorMessage);
+            }
+            default -> {
+                LOGGER.warning(() -> "Unhandled client error with code: " + errorCode);
+                yield new ExternalBadRequestException("Unexpected Error: " + errorMessage);
+            }
         };
     }
 
     private void handleServerError(HttpServerErrorException e) {
         HttpStatusCode statusCode = e.getStatusCode();
+        LOGGER.warning(() -> "Handling server error with status code: " + statusCode);
 
         if (statusCode.equals(INTERNAL_SERVER_ERROR)) {
             throw new ExternalServerErrorException("Internal Server Error: Please try again later.");

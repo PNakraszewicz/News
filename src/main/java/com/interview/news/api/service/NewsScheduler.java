@@ -9,9 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 @Service
 public class NewsScheduler {
+
+    private static final Logger LOGGER = Logger.getLogger(NewsScheduler.class.getName());
 
     private final SourceRepository sourceRepository;
     private final NewsService newsService;
@@ -22,32 +25,42 @@ public class NewsScheduler {
         this.newsService = newsService;
     }
 
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void fetchArticlesBySourcesConcurrent() {
-        List<Source> uniqueSources = sourceRepository.findAll();
+        LOGGER.info("Starting fetchArticlesBySourcesConcurrent");
 
+        List<Source> uniqueSources = sourceRepository.findAll();
         uniqueSources.parallelStream().forEach(source -> {
             ArticleParamsDTO params = new ArticleParamsDTO(null, null, source.getName());
             newsService.fetchAndSaveTopHeadlines(params);
         });
+
+        LOGGER.info("Completed fetchArticlesBySourcesConcurrent");
     }
 
     /*
-        Method left only to show the difference in performance between parallel streaming and standard for each approach.
+        Method left only to show the difference in performance between parallel streaming and sequential forEach approach.
         To observe the difference - may trigger NewsSchedulerPerformanceTest class.
      */
-    @Scheduled(cron = "0 0 0 * * ?")
     public void fetchArticlesBySourcesSequential() {
-        List<Source> uniqueSources = sourceRepository.findAll();
+        LOGGER.info("Starting fetchArticlesBySourcesSequential");
 
+        List<Source> uniqueSources = sourceRepository.findAll();
         uniqueSources.forEach(source -> {
             ArticleParamsDTO params = new ArticleParamsDTO(null, null, source.getName());
             newsService.fetchAndSaveTopHeadlines(params);
         });
+
+        LOGGER.info("Completed fetchArticlesBySourcesSequential");
     }
 
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0/10 * * * ?")
     @Transactional
-    public void fetchSourcesPeriodically() {
+    public void fetchSources() {
+        LOGGER.info("Starting fetchSourcesPeriodically");
+
         newsService.fetchAndSaveSources();
+
+        LOGGER.info("Completed fetchSourcesPeriodically");
     }
 }
