@@ -38,11 +38,11 @@ Adding more filter options would allow users to retrieve more specific and targe
 Currently, articles are fetched primarily by source. Enabling additional parameters, would provide users with a broader range of options to filter their results.
 
 ## Tech Stack
-Java 17
-Spring Boot (Spring Data JPA, Spring Web, Spring Cache)
-PostgreSQL for data storage
-Testcontainers for integration testing
-Docker for containerized testing and deployment
+#### Java 17
+#### Spring Boot (Spring Data JPA, Spring Web, Spring Cache)
+#### PostgreSQL for data storage
+#### Testcontainers for integration testing
+#### Docker for containerized testing and deployment
 
 ## Prerequisites
 ### Docker 
