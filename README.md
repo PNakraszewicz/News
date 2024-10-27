@@ -14,8 +14,28 @@ Caching and Scheduling: Reduces redundant API calls using caching and automatica
 Concurrency: Fetches news articles concurrently for improved performance.
 
 ## Tech Stack
-### Java 11+
+### Java 17
 ### Spring Boot (Spring Data JPA, Spring Web, Spring Cache)
 ### PostgreSQL for data storage
 ### Testcontainers for integration testing
 ### Docker for containerized testing and deployment
+
+## Prerequisites
+### Docker 
+Ensure that Docker is installed and running.
+### Available Port 5432: 
+PostgreSQL will run on port 5432, so ensure that this port is available.
+### Maven: 
+Maven is required to build and run the application.
+
+## Getting Started
+Build the application:
+```bash
+mvn clean install
+```
+Run the application:
+Run as configuration NewsApplication class
+or
+```bash
+mvn spring-boot:run
+```
