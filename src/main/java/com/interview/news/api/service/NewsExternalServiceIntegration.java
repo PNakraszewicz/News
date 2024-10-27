@@ -15,6 +15,7 @@ import com.interview.news.domain.model.dto.ArticleDTO;
 import com.interview.news.domain.model.dto.ArticleParamsDTO;
 import com.interview.news.domain.model.dto.SourceDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -33,7 +34,8 @@ import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 @Service
 public class NewsExternalServiceIntegration {
 
-    private static final String API_KEY = "b143d95790ab4f80aed6f66ea3b653b8";
+    @Value("${news.api.key}")
+    private String apiKey;
     private static final String NEWS_API_URL = "https://newsapi.org/v2/top-headlines";
     private static final String SOURCES_API_URL = "https://newsapi.org/v2/sources";
     private static final Logger LOGGER = Logger.getLogger(NewsExternalServiceIntegration.class.getName());
@@ -70,7 +72,7 @@ public class NewsExternalServiceIntegration {
 
     public List<SourceDTO> fetchSources() {
         String url = UriComponentsBuilder.fromHttpUrl(SOURCES_API_URL)
-                .queryParam("apiKey", API_KEY)
+                .queryParam("apiKey", apiKey)
                 .toUriString();
         LOGGER.info(() -> "Starting fetchSources with URL: " + url);
 
@@ -94,7 +96,7 @@ public class NewsExternalServiceIntegration {
 
     private String buildUrlForHeadlines(final ArticleParamsDTO articleParams) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(NEWS_API_URL)
-                .queryParam("apiKey", API_KEY);
+                .queryParam("apiKey", apiKey);
 
         if (articleParams.country() != null) {
             builder.queryParam("country", articleParams.country());

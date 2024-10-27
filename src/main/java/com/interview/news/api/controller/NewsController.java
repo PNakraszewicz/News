@@ -32,6 +32,7 @@ public class NewsController {
     /**
      * Endpoint that fetches news articles from the News API and saves them to the database.
      * The transaction ensures that if fetching or saving fails, no incomplete data is saved.
+     * example request: http://localhost:8080/api/news/fetch?category=sport
      */
     @PostMapping("/fetch")
     public ResponseEntity<?> fetchAndSaveTopHeadlines(
@@ -56,6 +57,7 @@ public class NewsController {
     /**
      * Endpoint that retrieves news articles from the database.
      * Supports optional limit and offset parameters, and results are sorted by date in descending order.
+     * example request: http://localhost:8080/api/news?limit=3&offset=5
      */
     @GetMapping
     public ResponseEntity<List<Article>> getNews(
